@@ -45,11 +45,9 @@ function Visualizer({ analyser, width, height }: Props) {
   useEffect(() => {
     // We only log when we're playing and the track has changed.
     if (playing && currentTrackId !== lastLoggedTrackId.current) {
-      const timestamp = new Date().toISOString();
       const logData = {
         title: trackTitle,
         trackId: String(currentTrackId),
-        timestamp,
         event: "track_change",
       };
 
@@ -60,7 +58,10 @@ function Visualizer({ analyser, width, height }: Props) {
         },
         body: JSON.stringify(logData),
       }).catch((err) =>
-        console.error(`[${timestamp}] Failed to log track change:`, err)
+        console.error(
+          `[${new Date().toISOString()}] Failed to log track change:`,
+          err
+        )
       );
 
       // Remember the track we just logged.
@@ -80,11 +81,7 @@ function Visualizer({ analyser, width, height }: Props) {
       }
       lastLoggedTitleTrackId.current = currentTrackId;
 
-      const timestamp = new Date().toISOString();
       const logData = {
-        title: trackTitle,
-        trackId: String(currentTrackId),
-        timestamp,
         event: "milkdrop_track_title_displayed",
       };
 
@@ -96,7 +93,7 @@ function Visualizer({ analyser, width, height }: Props) {
         body: JSON.stringify(logData),
       }).catch((err) =>
         console.error(
-          `[${timestamp}] Failed to log milkdrop title display:`,
+          `[${new Date().toISOString()}] Failed to log milkdrop title display:`,
           err
         )
       );
