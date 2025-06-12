@@ -53,8 +53,6 @@ function Visualizer({ analyser, width, height }: Props) {
         event: "track_change",
       };
 
-      console.log("New track detected. Logging to server:", logData);
-
       fetch("/api/log", {
         method: "POST",
         headers: {
@@ -89,8 +87,6 @@ function Visualizer({ analyser, width, height }: Props) {
         timestamp,
         event: "milkdrop_track_title_displayed",
       };
-
-      console.log("Milkdrop title displayed. Logging to server:", logData);
 
       fetch("/api/log", {
         method: "POST",
