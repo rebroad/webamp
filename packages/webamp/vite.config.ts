@@ -19,7 +19,11 @@ function logServer() {
               try {
                 const logData = JSON.parse(body);
                 const now = new Date().toISOString();
-                console.log(`[${now}] Track changed: ${logData.title} (ID: ${logData.trackId})`);
+                if (logData.event === 'track_change') {
+                  console.log(`[${now}] Track changed: ${logData.title} (ID: ${logData.trackId})`);
+                } else if (logData.event === 'milkdrop_track_title_displayed') {
+                  console.log(`[${now}] Milkdrop title displayed`);
+                }
                 res.statusCode = 200;
                 res.end('Logged');
               } catch (err) {

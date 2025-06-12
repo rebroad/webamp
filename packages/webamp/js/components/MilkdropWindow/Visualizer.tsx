@@ -40,6 +40,7 @@ function Visualizer({ analyser, width, height }: Props) {
     null
   );
   const lastLoggedTrackId = useRef<number | null>(null);
+  const lastLoggedTitleTrackId = useRef<number | null>(null);
 
   useEffect(() => {
     // We only log when we're playing and the track has changed.
@@ -68,6 +69,64 @@ function Visualizer({ analyser, width, height }: Props) {
       lastLoggedTrackId.current = currentTrackId;
     }
   }, [playing, currentTrackId, trackTitle]);
+
+  useEffect(() => {
+    const logTitle = () => {
+      // Don't log if we're not playing or there's no title.
+      if (
+        !playing ||
+        !trackTitle ||
+        lastLoggedTitleTrackId.current === currentTrackId
+      ) {
+        return;
+      }
+      lastLoggedTitleTrackId.current = currentTrackId;
+
+      const timestamp = new Date().toISOString();
+      const logData = {
+        title: trackTitle,
+        trackId: String(currentTrackId),
+        timestamp,
+        event: "milkdrop_track_title_displayed",
+      };
+
+      console.log("Milkdrop title displayed. Logging to server:", logData);
+
+      fetch("/api/log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(logData),
+      }).catch((err) =>
+        console.error(
+          `[${timestamp}] Failed to log milkdrop title display:`,
+          err
+        )
+      );
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        logTitle();
+      }
+    };
+
+    // Log the title when the track changes and the window is visible.
+    if (!document.hidden) {
+      logTitle();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [playing, trackTitle, currentTrackId]);
+
+  // When track changes, reset the title log ref, so we can log it again if it becomes visible.
+  useEffect(() => {
+    lastLoggedTitleTrackId.current = null;
+  }, [currentTrackId]);
 
   // Initialize the visualizer
   useEffect(() => {
