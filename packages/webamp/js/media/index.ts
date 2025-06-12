@@ -67,6 +67,12 @@ export default class Media {
     this._analyser.fftSize = 2048;
     // don't smooth audio analysis
     this._analyser.smoothingTimeConstant = 0.0;
+    // Set willReadFrequently on the underlying context
+    try {
+      Object.defineProperty(this._context, "willReadFrequently", { value: true });
+    } catch(e) {
+      // ignore if we can't set it.
+    }
 
     // Create the gain node for the volume control
     this._gainNode = this._context.createGain();

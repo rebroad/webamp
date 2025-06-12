@@ -1,5 +1,41 @@
-import { defineConfig } from "vite";
+import { defineConfig, ViteDevServer } from "vite";
 import { getPlugins } from "./scripts/rollupPlugins.mjs";
+import { Connect } from "vite";
+import http from "http";
+
+// Custom plugin to handle the /api/log endpoint
+function logServer() {
+  return {
+    name: 'log-server',
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(
+        async (req: Connect.IncomingMessage, res: http.ServerResponse, next: Connect.NextFunction) => {
+          if (req.method === 'POST' && req.url === '/api/log') {
+            let body = '';
+            req.on('data', (chunk: Buffer) => {
+              body += chunk.toString();
+            });
+            req.on('end', () => {
+              try {
+                const logData = JSON.parse(body);
+                const now = new Date().toISOString();
+                console.log(`[${now}] Track changed: ${logData.title} (ID: ${logData.trackId})`);
+                res.statusCode = 200;
+                res.end('Logged');
+              } catch (err) {
+                console.error('[Server] Failed to parse log data:', err);
+                res.statusCode = 500;
+                res.end('Error');
+              }
+            });
+          } else {
+            next();
+          }
+        }
+      );
+    }
+  }
+}
 
 export default defineConfig({
   build: {
@@ -13,6 +49,7 @@ export default defineConfig({
   },
   // @ts-ignore
   plugins: [
+    logServer() as any,
     ...getPlugins({
       minify: true,
       outputFile: "dist/demo-site/report",

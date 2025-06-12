@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { VISUALIZERS } from "../../constants";
 import * as Selectors from "../../selectors";
 import { TransitionType } from "../../types";
@@ -11,11 +11,11 @@ type ButterchurnVisualizer = {
   render(): void;
 };
 
-interface Props {
+type Props = {
   analyser: AnalyserNode;
   height: number;
   width: number;
-}
+};
 
 const TRANSITION_TYPE_DURATIONS = {
   [TransitionType.DEFAULT]: 2.7,
@@ -28,6 +28,7 @@ function Visualizer({ analyser, width, height }: Props) {
   const playing = useTypedSelector(Selectors.getMediaIsPlaying);
   const butterchurn = useTypedSelector(Selectors.getButterchurn);
   const trackTitle = useTypedSelector(Selectors.getCurrentTrackDisplayName);
+  const currentTrackId = useTypedSelector(Selectors.getCurrentTrackId);
   const currentPreset = useTypedSelector(Selectors.getCurrentPreset);
   const transitionType = useTypedSelector(Selectors.getPresetTransitionType);
   const message = useTypedSelector(Selectors.getMilkdropMessage);
@@ -38,6 +39,35 @@ function Visualizer({ analyser, width, height }: Props) {
   const [visualizer, setVisualizer] = useState<ButterchurnVisualizer | null>(
     null
   );
+  const lastLoggedTrackId = useRef<number | null>(null);
+
+  useEffect(() => {
+    // We only log when we're playing and the track has changed.
+    if (playing && currentTrackId !== lastLoggedTrackId.current) {
+      const timestamp = new Date().toISOString();
+      const logData = {
+        title: trackTitle,
+        trackId: String(currentTrackId),
+        timestamp,
+        event: "track_change",
+      };
+
+      console.log("New track detected. Logging to server:", logData);
+
+      fetch("/api/log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(logData),
+      }).catch((err) =>
+        console.error(`[${timestamp}] Failed to log track change:`, err)
+      );
+
+      // Remember the track we just logged.
+      lastLoggedTrackId.current = currentTrackId;
+    }
+  }, [playing, currentTrackId, trackTitle]);
 
   // Initialize the visualizer
   useEffect(() => {
